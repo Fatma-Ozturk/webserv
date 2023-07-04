@@ -4,35 +4,54 @@
 #include <map>
 #include <iostream>
 #include <cstring>
+#include <csignal>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <fcntl.h>
 
 #include "Server.hpp"
+#include "Client.hpp"
 #include "../entity/HttpScope.hpp"
+#include "../error/ClusterException.hpp"
 
 class Server;
 class HttpScope;
+class ClusterException;
 class Cluster
 {
     private:
-        HttpScope					httpScope;//http class gelecek
-        std::map<long, Server>      servers;
-        std::map<long, Server *>    sockets;//her server üzerinden kurulan socketleri tutacak
-        std::vector<int>            ready;//veri gönderimine hazır socketler(writing_set'e eklenmiş)
-        fd_set                      fd_master;//(tüm fd'lerin tutulduğu set)
-        long						max_fd;//select() için ve kontrol amaçlı gerekli
-        fd_set		                reading_set;//içinden veri okunmaya hazır fd seti
-    	fd_set		                writing_set;//içine veri yazılmaya hazır fd seti
-    	struct timeval	            timeout;//select() için zaman aşımı süresi
-        int                         select_return_value;//select() return değeri
-    
+        HttpScope*                  httpScope;
+        std::map<int, Server *>     servers;
+        int                         max_fd;
+        fd_set                      readFds;
+        fd_set                      supReadFds;
+        fd_set                      supWriteFds;
+        fd_set                      writeFds;
+        int                         selected;
+        int                         isMulti;
+        int                         isFav;
+        int                         loopControl;
+        int                         status;
+        size_t                      contentLen;
+        std::map<int, Client *>     clients;
+        std::string                 method;
+        std::string                 favicon;
+        std::string                 _response;
+        std::string                 MultiBody;
+        std::string                 body;
+        ClusterException            _clusterException;
     public:
         Cluster();
         ~Cluster();
-    
-        //setUp-->run-->select-->accept-->recv-->send
-        int		setUpCluster();
-    	void	run();
-        void	select_section();//havuzdan fd seçimi yapılır
-        void 	accept_section();//client'a hizmet için hazır bir socket oluşturulur
-        void	recv_section();
-        void	send_section();
+
+        int     setUpCluster(HttpScope *http);
+        void    run();
+        void    accept_section();
+        void    recv_section();
+        void    send_section();
+        void	close_connection(std::map<int, Client *>::iterator it);
+        void	findMaxFd();
+        void    cleanServers();
+        void    cleanClients();
+        void    cleanAll();
 };

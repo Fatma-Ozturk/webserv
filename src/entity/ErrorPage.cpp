@@ -1,72 +1,80 @@
 #include "../inc/entity/ErrorPage.hpp"
 
-ErrorPage::ErrorPage()
-{
-}
+ErrorPage::ErrorPage() {}
 
-ErrorPage::~ErrorPage()
-{
-}
+ErrorPage::~ErrorPage() {}
 
-ErrorPage::ErrorPage(const ErrorPage &errorPage)
-{
-    *this = errorPage;
-}
+ErrorPage::ErrorPage(const ErrorPage &errorPage) { *this = errorPage; }
 
 ErrorPage	&ErrorPage::operator=(const ErrorPage &errorPage)
 {
     if (this == &errorPage)
         return (*this);
-    this->_codes = errorPage._codes;
-    this->_pageName = errorPage._pageName;
+    this->_errorPageCodes = errorPage._errorPageCodes;
+    this->_errorPagePath = errorPage._errorPagePath;
+    this->_errorPage = errorPage._errorPage;
+    this->_httpStatusCode = errorPage._httpStatusCode;
     return (*this);
 }
 
-std::vector<std::string> ErrorPage::getCodes()
+std::vector<std::string> ErrorPage::getErrorPageCodes()
 {
-    std::vector<std::string> codes;
-    std::string tempCodes;
-    std::stringstream sp(this->_codes);
+    std::istringstream iss(this->_errorPage);
 
-    while (sp << tempCodes)
-    {
-        codes.push_back(tempCodes);
+    std::string token;
+    while (iss >> std::ws >> token) {
+        bool isNumber = true;
+        for (std::string::size_type i = 0; i < token.length(); ++i) {
+            if (!std::isdigit(token[i])) {
+                isNumber = false;
+                break;
+            }
+        }
+
+        if (isNumber && _httpStatusCode.checkStatusCode(atoi(token.c_str()))) {
+            this->_errorPageCodes.push_back(token);
+        }
     }
-    return (codes);
+    return (this->_errorPageCodes);
 }
 
-std::string ErrorPage::getPageName()
+std::string ErrorPage::getErrorPagePath()
 {
-    return (this->_pageName);
+    std::istringstream iss(this->_errorPage);
+
+    std::string token;
+    while (iss >> std::ws >> token) {
+        bool isNumber = true;
+        for (std::string::size_type i = 0; i < token.length(); ++i) {
+            if (!std::isdigit(token[i])) {
+                isNumber = false;
+                break;
+            }
+        }
+
+        if (!isNumber) {
+            this->_errorPagePath = token;
+        }
+    }
+    return (this->_errorPagePath);
 }
 
-void ErrorPage::setCodes(std::string code)
+std::string ErrorPage::getErrorPage()
 {
-    (void)code;
-    // this->_codes.push_back(code);
+    return (this->_errorPage);
 }
 
-void ErrorPage::setPageName(std::string pageName)
+void ErrorPage::setErrorPageCodes(std::string code)
 {
-    this->_pageName = pageName;
+    this->_errorPageCodes.push_back(code);
 }
 
-void ErrorPage::setKeywordDatabase(DataBase<Variable<std::string> > keywordDatabase)
+void ErrorPage::setErrorPagePath(std::string pagePath)
 {
-    this->_keywordDatabase = keywordDatabase;
+    this->_errorPagePath = pagePath;
 }
 
-std::string ErrorPage::getName() const
+void ErrorPage::setErrorPage(std::string errorPage)
 {
-    return (this->name);
+    this->_errorPage = errorPage;
 }
-
-void ErrorPage::keywordFill()
-{
-    _keywordDatabase.insertData(Variable<std::string>("codes", &this->_codes));
-    _keywordDatabase.insertData(Variable<std::string>("pageName", &this->_pageName));
-}
-
-
-ErrorPage* ErrorPage::cloneNew() const { return new ErrorPage(); }
-ErrorPage* ErrorPage::clone() const { return new ErrorPage(*this); }

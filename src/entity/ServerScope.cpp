@@ -1,15 +1,13 @@
 #include "../inc/entity/ServerScope.hpp"
 
-ServerScope::ServerScope(/* args */)
+ServerScope::ServerScope()
 {
     this->keywordFill();
 }
 
-ServerScope::~ServerScope()
-{
-}
+ServerScope::~ServerScope() {}
 
-ServerScope::ServerScope(const ServerScope &server)
+ServerScope::ServerScope(const ServerScope &server) : CgiScope(server)
 {
     *this = server;
 }
@@ -23,8 +21,13 @@ ServerScope	&ServerScope::operator=(const ServerScope &server)
     this->_root = server._root;
     this->_index = server._index;
     this->_serverNames = server._serverNames;
-    this->_cgi_pass = server._cgi_pass;
     this->_listen = server._listen;
+    this->listen = server.listen;
+    this->_locations = server._locations;
+    this->_ip = server._ip;
+    this->_isServerNameNothing = server._isServerNameNothing;
+    this->_errorPage = server._errorPage;
+    this->_keywordDatabase = server._keywordDatabase;
     return (*this);
 }
 
@@ -37,10 +40,14 @@ void ServerScope::setPort(std::string port)
     this->_port = port;
 }
 
+ void ServerScope::setIp(std::string ip)
+ {
+    this->_ip = ip;
+ }
+
 void ServerScope::setServerName(std::string serverName)
 {
     (void)serverName;
-    // this->_serverNames.push_back(serverName);
 }
 
 void ServerScope::setLocation(LocationScope *location)
@@ -71,20 +78,20 @@ void ServerScope::setIndex(std::string index)
 {
     this->_index = index;
 }
-void ServerScope::setCgi_pass(std::string cgi_pass)
+
+void ServerScope::setListen()
 {
-    this->_cgi_pass = cgi_pass;
+    this->listen.port = atoi(this->getPort().c_str());
+    this->listen.host = strToIp(this->getIp());
+}
+
+t_listen    ServerScope::getListen()
+{
+    ServerScope::setListen();
+    return this->listen;
 }
 
 std::string ServerScope::getPort()
-{
-    std::string tempPort;
-    std::istringstream sp(this->_listen);
-
-    std::getline(sp, tempPort, ':');
-    return tempPort;
-}
-std::string ServerScope::getHost()
 {
     std::string tempHost;
     std::istringstream sp(this->_listen);
@@ -94,6 +101,18 @@ std::string ServerScope::getHost()
     std::getline(sp >> std::ws, tempHost, ':');
     std::getline(sp >> std::ws, tempHost);
     return tempHost;
+}
+std::string ServerScope::getIp()
+{
+    std::string tempPort;
+    std::istringstream sp(this->_listen);
+
+    std::getline(sp, tempPort, ':');
+    return tempPort;
+}
+std::string ServerScope::getHost()
+{
+    return (this->_listen);
 }
 ErrorPage ServerScope::getErrorPage()
 {
@@ -126,13 +145,17 @@ std::string ServerScope::getRoot()
 {
     return (this->_root);
 }
-std::string ServerScope::getIndex()
+std::vector<std::string> ServerScope::getIndex()
 {
-    return (this->_index);
-}
-std::string ServerScope::getCgi_pass()
-{
-    return (this->_cgi_pass);
+    std::vector<std::string> indexs;
+    std::string tempIndexs;
+    std::stringstream sp(this->_index);
+
+    while (sp >> std::ws >> tempIndexs)
+    {
+        indexs.push_back(tempIndexs);
+    }
+    return (indexs);
 }
 
 DataBase<Variable<std::string> > ServerScope::getKeywordDataBase()
@@ -147,14 +170,12 @@ void ServerScope::keywordFill()
     _keywordDatabase.insertData(Variable<std::string>("server_name", &this->_serverNames));
     _keywordDatabase.insertData(Variable<std::string>("root", &this->_root));
     _keywordDatabase.insertData(Variable<std::string>("index", &this->_index));
-    _keywordDatabase.insertData(Variable<std::string>("cgi_pass", &this->_cgi_pass));
     _keywordDatabase.insertData(Variable<std::string>("listen", &this->_listen));
-}
-
-std::string ServerScope::getName() const
-{
-    return (this->name);
+    _keywordDatabase.insertData(Variable<std::string>("cgi_pass", &this->_pass));
+    _keywordDatabase.insertData(Variable<std::string>("cgi_param", &this->_param));
 }
 
 ServerScope *ServerScope::cloneNew() const { return new ServerScope(); }
 ServerScope *ServerScope::clone() const { return new ServerScope(*this); }
+std::string ServerScope::getName() const { return (this->name); }
+

@@ -17,21 +17,20 @@ class DataBase
         std::vector<T> _data;    
 
         DataBase(){}
+
         DataBase(std::vector<T> data)
         {
             this->_data = data;
         }
-        ~DataBase()
-        {
 
-        }
+        ~DataBase() {}
 
         std::vector<T> getAllData()
         {
             return (this->_data);
         }
 
-        void insertData(T data) // add new element
+        void insertData(T data)
         {
             this->_data.push_back(data);
         }
@@ -55,8 +54,8 @@ class DataBase
             }
         }
 
-        template <typename K>
-        T getByNameData(std::string name)
+        template <typename V, typename K>
+        T getByNameData(V name)
         {
             T classe;
             typename std::vector<T>::iterator it = std::find_if(this->_data.begin(), this->_data.end(), K(name));
@@ -68,10 +67,10 @@ class DataBase
             return classe;
         }
 
-        template <typename K>
-        bool isHere(std::string name)
+        template <typename V,typename F>
+        bool isHere(V name)
         {
-            return (std::find_if(_data.begin(), _data.end(), K(name)) != this->_data.end());
+            return (std::find_if(_data.begin(), _data.end(), F(name)) != this->_data.end());
         }
 
         int size()
@@ -80,17 +79,3 @@ class DataBase
         }
 
 };
-
-
-/* int main(){
-    
-    std::vector<std::string> vec;
-    vec.push_back("aa");
-    vec.push_back("bb");
-    vec.push_back("cc");
-    DataBase <std::string>db(vec);
-    db.updateData("cc", "qq");
-    std::cout<<db.isHere("qq")<<std::endl;
-    std::cout<<db.isHere("merhaba")<<std::endl;
-    
-} */
